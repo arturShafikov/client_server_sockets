@@ -31,40 +31,110 @@ Server::~Server() {
 
 void Server::init_listening() {
 
- int count;
- char buffer[1024];
+ fd_set read_sockets;
+ int max_clients = 30;
+ int client_socket[30];
  struct sockaddr_in addr_client;
  int sckt_client;
+ int max_sd;
+ int sd;
+ int activity;
+ char buffer[1024] = {0};
+ int count;
+
+ const char* welcome_message = "Welcome to the server.\n";
+ const char* response_message = "Message received.\n";
+
+ for (int i = 0; i < max_clients; i++) {
+  client_socket[i] = 0;
+ }
 
  listen(sckt_server, 5);
 
- int addr_len = sizeof(addr_client);
- while(std::strcmp(buffer, "exit") != 0) {
-  sckt_client = -1;
-  bzero((char*)&addr_client, addr_len);
-  count = -1;
+ socklen_t addr_len = sizeof(addr_client);
+ int pid;
+ while(true) {
 
-  sckt_client = accept(sckt_server, (struct sockaddr*)&addr_client, (socklen_t*)&addr_len);
-  printf("WOW\n");
-  if (sckt_client < 0) {
-   perror("ERROR on accept");
-   exit(EXIT_FAILURE);
-  }
- 
-  bzero(buffer, 1024);
-  count = read(sckt_client, buffer, 1024);
-  if (count < 0) {
-   perror("ERROR reading from socket");
-   exit(EXIT_FAILURE);
-  }
-  printf("Received message:\n%s", buffer);
+  FD_ZERO(&read_sockets);
+  FD_SET(sckt_server, &read_sockets);
+  max_sd = sckt_server;
 
-  count = write(sckt_client, "Message received\n", 16);
-  if (count < 0) {
-   perror("ERROR writing to socket");
-   exit(EXIT_FAILURE);
+  for (int i = 0; i < max_clients; i++) {
+   sd = client_socket[i];
+
+   if (sd > 0) {
+    FD_SET(sd, &read_sockets);
+   }
+
+   if (sd > max_sd) {
+    max_sd = sd;
+   }
+  }
+
+  activity = select(max_sd+1, &read_sockets, NULL, NULL, NULL);
+
+  if ((activity < 0) && (errno!=EINTR)) {
+    printf("Select error\n");
+  }
+
+  if (FD_ISSET(sckt_server, &read_sockets)) {
+   if ((sckt_client = accept(sckt_server, (struct sockaddr*)&addr_client, &addr_len)) < 0) {
+    perror("ERROR on accept");
+    exit(EXIT_FAILURE);
+   }
+
+   printf("New connection:\nsocket - %d\nip - %s\nport - %d\n", sckt_client, inet_ntoa(addr_client.sin_addr), ntohs(addr_client.sin_port));
+
+   if (write(sckt_client, welcome_message, strlen(welcome_message)) != strlen(welcome_message)) {
+    perror("ERROR in writing welcoming message");
+   }
+
+   for (int i = 0; i < max_clients; i++) {
+    if (client_socket[i] == 0) {
+     client_socket[i] = sckt_client;
+     printf("Adding to the list of sockets as %d\n", i);
+     break;
+    }
+   }
+  }
+
+  for (int i = 0; i < max_clients; i++) {
+   sd = client_socket[i];
+   
+   if (FD_ISSET(sd, &read_sockets)) {
+    count = read(sd, buffer, 1024);
+    if (count == 0) {
+     printf("Disconnected...");
+     close(sd);
+     client_socket[i] = 0;
+    } else {
+     printf("Received message:\n%s", buffer);
+     count = write(sd, "Message received\n", 16);
+     if (count < 0) {
+      perror("ERROR writing to socket");
+      exit(EXIT_FAILURE);
+     }
+    }
+   }
   }
  }
- 
- close(sckt_client);
+}
+
+void Server::generate_response(int sckt) {
+
+ int count;
+ char buffer[1024] = {0};
+
+ count = read(sckt, buffer, 1024);
+ if (count < 0) {
+  perror("ERROR reading from socket");
+  exit(EXIT_FAILURE);
+ }
+ printf("Received message:\n%s", buffer);
+
+ count = write(sckt, "Message received\n", 16);
+ if (count < 0) {
+  perror("ERROR writing to socket");
+  exit(EXIT_FAILURE);
+ }
 }

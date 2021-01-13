@@ -9,12 +9,17 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/time.h>
+#include <errno.h>
+#include <arpa/inet.h>
 
 class Server {
 private:
  int sckt_server;
  const int port;
  struct sockaddr_in addr_server;
+
+ void generate_response(int sckt);
 public:
   Server();
   ~Server();
