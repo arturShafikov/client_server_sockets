@@ -2,7 +2,6 @@
 
 Client::Client(const char* address, int port) : address(address), port(port) {
 
- bzero((char *) &addr_server, sizeof(addr_server));
  addr_server.sin_family = AF_INET;
  if (inet_pton(AF_INET, address, &addr_server.sin_addr) <= 0) {
   perror("ERROR in address");

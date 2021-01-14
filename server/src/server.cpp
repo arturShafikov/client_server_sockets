@@ -106,7 +106,9 @@ void Server::init_listening() {
      exit(EXIT_FAILURE);
     }
    printf("Received message:\n%s", buffer);
-   count = sendto(udp_socket, response_message, strlen(response_message), 0, (struct sockaddr*)&addr_client, addr_len);
+   std::string response = data_processor.process_data(buffer);
+   const char* resp_c = response.c_str();
+   count = sendto(udp_socket, resp_c, strlen(resp_c), 0, (struct sockaddr*)&addr_client, addr_len);
    if (count < 0) {
     perror("ERROR writing to socket");
     exit(EXIT_FAILURE);
@@ -124,7 +126,9 @@ void Server::init_listening() {
      client_socket[i] = 0;
     } else {
      printf("Received message:\n%s", buffer);
-     count = write(sd, response_message, strlen(response_message));
+     std::string response = data_processor.process_data(buffer);
+     const char* resp_c = response.c_str();
+     count = write(sd, resp_c, strlen(resp_c));
      if (count < 0) {
       perror("ERROR writing to socket");
       exit(EXIT_FAILURE);

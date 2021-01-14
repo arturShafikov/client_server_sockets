@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <algorithm>
+#include "data_processor.h"
 
 class Server {
 private:
@@ -20,7 +21,7 @@ private:
  int udp_socket;
  const int port;
  struct sockaddr_in addr_server;
-
+ DataProcessor data_processor;
 public:
   Server();
   ~Server();
