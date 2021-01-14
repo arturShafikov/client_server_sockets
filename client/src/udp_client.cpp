@@ -11,23 +11,10 @@ UdpClient::~UdpClient() {
  close(sckt);
 }
 
-void UdpClient::init_requesting() {
- int count;
- char buffer[1024];
- socklen_t addr_len = sizeof(addr_server);
- while (true) {
-  printf("Please enter the message:\n");
-  bzero(buffer, 1024);
-  fgets(buffer, 1024, stdin);
-  count = sendto(sckt, buffer, strlen(buffer), 0, (struct sockaddr*)&addr_server, addr_len);
-  if (count < 0) {
-   error("ERROR writing to socket");
-  }
-  bzero(buffer, 1024);
-  count = recvfrom(sckt, buffer, sizeof(buffer), 0, (struct sockaddr*)&addr_server, &addr_len);
-  if (count < 0) {
-   error("ERROR reading from socket");
-  }
-  printf("Server response:\n%s\n", buffer);
- }
+int UdpClient::write_to_socket(int length) {
+ return sendto(sckt, buffer, length, 0, (struct sockaddr*)&addr_server, addr_len);
+}
+
+int UdpClient::read_from_socket(int length) {
+ return recvfrom(sckt, buffer, length, 0, (struct sockaddr*)&addr_server, &addr_len);
 }
