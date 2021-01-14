@@ -13,14 +13,14 @@
 
 class Client {
 private:
- int sckt;
  const int port;
  const char *address;
+protected:
  struct sockaddr_in addr_server;
 public:
-  Client();
-  ~Client();
-  void init_requesting();
+  Client(const char* address, int port);
+  virtual ~Client();
+  virtual void init_requesting() = 0;
 };
 
 #endif
