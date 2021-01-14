@@ -30,11 +30,12 @@ void TcpClient::init_requesting() {
    perror("ERROR writing to socket");
    exit(EXIT_FAILURE);
   }
+  bzero(buffer, 1024);
   count = read(sckt, buffer, 1024);
   if (count < 0) {
    perror("ERROR reading from socket");
    exit(EXIT_FAILURE);
   }
-  printf("Server response:\n%s", buffer);
+  printf("Server response:\n%s\n", buffer);
  }
 }

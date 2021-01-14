@@ -26,11 +26,12 @@ void UdpClient::init_requesting() {
    perror("ERROR writing to socket");
    exit(EXIT_FAILURE);
   }
+  bzero(buffer, 1024);
   count = recvfrom(sckt, buffer, sizeof(buffer), 0, (struct sockaddr*)&addr_server, &addr_len);
   if (count < 0) {
    perror("ERROR reading from socket");
    exit(EXIT_FAILURE);
   }
-  printf("Server response:\n%s", buffer);
+  printf("Server response:\n%s\n", buffer);
  }
 }
