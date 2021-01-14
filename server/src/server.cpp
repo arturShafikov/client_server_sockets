@@ -101,9 +101,15 @@ void Server::init_listening() {
   if (FD_ISSET(udp_socket, &read_sockets)) {
    bzero(buffer, sizeof(buffer));
    count = recvfrom(udp_socket, buffer, sizeof(buffer), 0, (struct sockaddr*)&addr_client, &addr_len);
-   if (count != 0) {
-    printf("Received message:\n%s", buffer);
-    sendto(udp_socket, response_message, strlen(response_message), 0, (struct sockaddr*)&addr_client, addr_len);
+   if (count < 0) {
+     perror("ERROR reading from socket");
+     exit(EXIT_FAILURE);
+    }
+   printf("Received message:\n%s", buffer);
+   count = sendto(udp_socket, response_message, strlen(response_message), 0, (struct sockaddr*)&addr_client, addr_len);
+   if (count < 0) {
+    perror("ERROR writing to socket");
+    exit(EXIT_FAILURE);
    }
   }
 
