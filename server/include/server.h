@@ -19,7 +19,6 @@ private:
  const int port;
  struct sockaddr_in addr_server;
 
- void generate_response(int sckt);
 public:
   Server();
   ~Server();

@@ -38,7 +38,7 @@ void Client::init_requesting() {
  int count;
  char buffer[1024];
  while (true) {
-  printf("\nPlease enter the message:\n");
+  printf("Please enter the message:\n");
   bzero(buffer, 1024);
   count = -1;
   fgets(buffer, 1024, stdin);
