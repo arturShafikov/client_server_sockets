@@ -22,6 +22,8 @@ private:
  const int port;
  struct sockaddr_in addr_server;
  DataProcessor data_processor;
+
+ void error(const char *error_msg);
 public:
   Server();
   ~Server();

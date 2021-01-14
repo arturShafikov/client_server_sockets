@@ -17,6 +17,7 @@ private:
  const char *address;
 protected:
  struct sockaddr_in addr_server;
+ void error(const char *error_msg);
 public:
   Client(const char* address, int port);
   virtual ~Client();

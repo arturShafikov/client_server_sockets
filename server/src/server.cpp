@@ -1,17 +1,20 @@
 #include "server.h"
 
+void Server::error(const char *error_msg) {
+ perror(error_msg);
+ exit(EXIT_FAILURE);
+}
+
 Server::Server() : port(8080) {
 
  tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
  if (tcp_socket < 0) {
-  perror("ERROR opening socket");
-  exit(EXIT_FAILURE);
+  error("ERROR opening socket");
  }
 
  int opt = 1;
  if (setsockopt(tcp_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) != 0) {
-  perror("ERROR in setting socket opts");
-  exit(EXIT_FAILURE);
+  error("ERROR in setting socket opts");
  }
 
  bzero((char*)&addr_server, sizeof(addr_server));
@@ -20,14 +23,12 @@ Server::Server() : port(8080) {
  addr_server.sin_addr.s_addr = INADDR_ANY;
 
  if (bind(tcp_socket, (struct sockaddr *)&addr_server, sizeof(addr_server)) < 0) {
-  perror("ERROR on binding tcp socket");
-  exit(EXIT_FAILURE);
+  error("ERROR on binding tcp socket");
  }
 
  udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
  if (bind(udp_socket, (struct sockaddr *)&addr_server, sizeof(addr_server)) < 0) {
-  perror("ERROR on binding udp socket");
-  exit(EXIT_FAILURE);
+  error("ERROR on binding udp socket");
  }
 }
 
@@ -42,7 +43,6 @@ void Server::init_listening() {
  int sckt_client;
  int max_sd;
  int sd;
- int client_socket[30];
  int max_clients = 30;
  struct sockaddr_in addr_client;
  int activity;
@@ -50,14 +50,15 @@ void Server::init_listening() {
  int count;
 
  const char* response_message = "Message received. \n";
+ socklen_t addr_len = sizeof(addr_client);
 
+ int client_socket[30];
  for (int i = 0; i < max_clients; i++) {
   client_socket[i] = 0;
  }
 
  listen(tcp_socket, 5);
 
- socklen_t addr_len = sizeof(addr_client);
  while(true) {
 
   FD_ZERO(&read_sockets);
@@ -86,8 +87,7 @@ void Server::init_listening() {
 
   if (FD_ISSET(tcp_socket, &read_sockets)) {
    if ((sckt_client = accept(tcp_socket, (struct sockaddr*)&addr_client, &addr_len)) < 0) {
-    perror("ERROR on accept");
-    exit(EXIT_FAILURE);
+    error("ERROR on accept");
    }
 
    for (int i = 0; i < max_clients; i++) {
@@ -102,16 +102,14 @@ void Server::init_listening() {
    bzero(buffer, sizeof(buffer));
    count = recvfrom(udp_socket, buffer, sizeof(buffer), 0, (struct sockaddr*)&addr_client, &addr_len);
    if (count < 0) {
-     perror("ERROR reading from socket");
-     exit(EXIT_FAILURE);
+     error("ERROR reading from socket");
     }
    printf("Received message:\n%s", buffer);
    std::string response = data_processor.process_data(buffer);
    const char* resp_c = response.c_str();
    count = sendto(udp_socket, resp_c, strlen(resp_c), 0, (struct sockaddr*)&addr_client, addr_len);
    if (count < 0) {
-    perror("ERROR writing to socket");
-    exit(EXIT_FAILURE);
+    error("ERROR writing to socket");
    }
   }
 
@@ -130,8 +128,7 @@ void Server::init_listening() {
      const char* resp_c = response.c_str();
      count = write(sd, resp_c, strlen(resp_c));
      if (count < 0) {
-      perror("ERROR writing to socket");
-      exit(EXIT_FAILURE);
+      error("ERROR writing to socket");
      }
     }
    }
