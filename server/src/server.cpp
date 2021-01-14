@@ -2,14 +2,14 @@
 
 Server::Server() : port(8080) {
 
- sckt_server = socket(AF_INET, SOCK_STREAM, 0);
- if (sckt_server < 0) {
+ tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
+ if (tcp_socket < 0) {
   perror("ERROR opening socket");
   exit(EXIT_FAILURE);
  }
 
  int opt = 1;
- if (setsockopt(sckt_server, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) != 0) {
+ if (setsockopt(tcp_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) != 0) {
   perror("ERROR in setting socket opts");
   exit(EXIT_FAILURE);
  }
@@ -19,14 +19,21 @@ Server::Server() : port(8080) {
  addr_server.sin_port = htons(port);
  addr_server.sin_addr.s_addr = INADDR_ANY;
 
- if (bind(sckt_server, (struct sockaddr *)&addr_server, sizeof(addr_server)) < 0) {
-  perror("ERROR on binding");
+ if (bind(tcp_socket, (struct sockaddr *)&addr_server, sizeof(addr_server)) < 0) {
+  perror("ERROR on binding tcp socket");
   exit(EXIT_FAILURE);
- } 
+ }
+
+ udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
+ if (bind(udp_socket, (struct sockaddr *)&addr_server, sizeof(addr_server)) < 0) {
+  perror("ERROR on binding udp socket");
+  exit(EXIT_FAILURE);
+ }
 }
 
 Server::~Server() {
- close(sckt_server);
+ close(tcp_socket);
+ close(udp_socket);
 }
 
 void Server::init_listening() {
@@ -48,14 +55,15 @@ void Server::init_listening() {
   client_socket[i] = 0;
  }
 
- listen(sckt_server, 5);
+ listen(tcp_socket, 5);
 
  socklen_t addr_len = sizeof(addr_client);
  while(true) {
 
   FD_ZERO(&read_sockets);
-  FD_SET(sckt_server, &read_sockets);
-  max_sd = sckt_server;
+  FD_SET(tcp_socket, &read_sockets);
+  FD_SET(udp_socket, &read_sockets);
+  max_sd = std::max(tcp_socket, udp_socket);
 
   for (int i = 0; i < max_clients; i++) {
    sd = client_socket[i];
@@ -73,10 +81,11 @@ void Server::init_listening() {
 
   if ((activity < 0) && (errno!=EINTR)) {
     printf("Select error\n");
+    continue;
   }
 
-  if (FD_ISSET(sckt_server, &read_sockets)) {
-   if ((sckt_client = accept(sckt_server, (struct sockaddr*)&addr_client, &addr_len)) < 0) {
+  if (FD_ISSET(tcp_socket, &read_sockets)) {
+   if ((sckt_client = accept(tcp_socket, (struct sockaddr*)&addr_client, &addr_len)) < 0) {
     perror("ERROR on accept");
     exit(EXIT_FAILURE);
    }
@@ -89,10 +98,20 @@ void Server::init_listening() {
    }
   }
 
+  if (FD_ISSET(udp_socket, &read_sockets)) {
+   bzero(buffer, sizeof(buffer));
+   count = recvfrom(udp_socket, buffer, sizeof(buffer), 0, (struct sockaddr*)&addr_client, &addr_len);
+   if (count != 0) {
+    printf("Received message:\n%s", buffer);
+    sendto(udp_socket, response_message, strlen(response_message), 0, (struct sockaddr*)&addr_client, addr_len);
+   }
+  }
+
   for (int i = 0; i < max_clients; i++) {
    sd = client_socket[i];
    
    if (FD_ISSET(sd, &read_sockets)) {
+    bzero(buffer, sizeof(buffer));
     count = read(sd, buffer, 1024);
     if (count == 0) {
      close(sd);

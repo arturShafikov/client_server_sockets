@@ -12,10 +12,12 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include <algorithm>
 
 class Server {
 private:
- int sckt_server;
+ int tcp_socket;
+ int udp_socket;
  const int port;
  struct sockaddr_in addr_server;
 
