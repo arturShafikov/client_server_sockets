@@ -1,12 +1,22 @@
 #include "server.h"
 
+/**Error "handler"
+** error_msg - message to print
+**/
 void Server::error(const char *error_msg) {
  perror(error_msg);
  exit(EXIT_FAILURE);
 }
 
-Server::Server() : port(8080) {
+Server::Server(int port) : port(port) {
 
+ //initializing structure for server address
+ bzero((char*)&addr_server, sizeof(addr_server));
+ addr_server.sin_family = AF_INET;
+ addr_server.sin_port = htons(port);
+ addr_server.sin_addr.s_addr = INADDR_ANY;
+
+ //creatig tcp socket
  tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
  if (tcp_socket < 0) {
   error("ERROR opening socket");
@@ -17,15 +27,11 @@ Server::Server() : port(8080) {
   error("ERROR in setting socket opts");
  }
 
- bzero((char*)&addr_server, sizeof(addr_server));
- addr_server.sin_family = AF_INET;
- addr_server.sin_port = htons(port);
- addr_server.sin_addr.s_addr = INADDR_ANY;
-
  if (bind(tcp_socket, (struct sockaddr *)&addr_server, sizeof(addr_server)) < 0) {
   error("ERROR on binding tcp socket");
  }
-
+ 
+ //creating udp socket
  udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
  if (bind(udp_socket, (struct sockaddr *)&addr_server, sizeof(addr_server)) < 0) {
   error("ERROR on binding udp socket");
@@ -37,6 +43,9 @@ Server::~Server() {
  close(udp_socket);
 }
 
+/**listening for tcp and udp connections
+** and generating responses
+**/
 void Server::init_listening() {
 
  fd_set read_sockets;
@@ -49,7 +58,6 @@ void Server::init_listening() {
  char buffer[1024] = {0};
  int count;
 
- const char* response_message = "Message received. \n";
  socklen_t addr_len = sizeof(addr_client);
 
  int client_socket[30];
@@ -85,6 +93,7 @@ void Server::init_listening() {
     continue;
   }
 
+  //process new tcp connections
   if (FD_ISSET(tcp_socket, &read_sockets)) {
    if ((sckt_client = accept(tcp_socket, (struct sockaddr*)&addr_client, &addr_len)) < 0) {
     error("ERROR on accept");
@@ -98,6 +107,7 @@ void Server::init_listening() {
    }
   }
 
+  //process udp requests
   if (FD_ISSET(udp_socket, &read_sockets)) {
    bzero(buffer, sizeof(buffer));
    count = recvfrom(udp_socket, buffer, sizeof(buffer), 0, (struct sockaddr*)&addr_client, &addr_len);
@@ -113,6 +123,7 @@ void Server::init_listening() {
    }
   }
 
+  //process tcp requests
   for (int i = 0; i < max_clients; i++) {
    sd = client_socket[i];
    

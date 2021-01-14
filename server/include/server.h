@@ -17,15 +17,15 @@
 
 class Server {
 private:
- int tcp_socket;
- int udp_socket;
- const int port;
- struct sockaddr_in addr_server;
- DataProcessor data_processor;
+ int tcp_socket;//socket for tcp connections
+ int udp_socket;//socket for udp connections
+ const int port;//server port
+ struct sockaddr_in addr_server;//full server address
+ DataProcessor data_processor;//object for data processing
 
  void error(const char *error_msg);
 public:
-  Server();
+  Server(int port = 8080);
   ~Server();
   void init_listening();
 };

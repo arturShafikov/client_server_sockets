@@ -1,5 +1,6 @@
 #include "data_processor.h"
 
+//extracting numbers from string to the vector of int
 std::vector<int> DataProcessor::extract_numbers(const std::string& string_data) {
  std::vector<int> numbers;
  int number = 0;
@@ -22,6 +23,7 @@ std::vector<int> DataProcessor::extract_numbers(const std::string& string_data) 
  return numbers;
 }
 
+//output string generation (sorting and sum)
 std::string DataProcessor::process_data(char* data) {
  std::string output = "";
  std::string string_data(data);

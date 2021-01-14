@@ -3,9 +3,10 @@
 
 #include "client.h"
 
+//Tcp client class
 class TcpClient : public Client {
 private:
- int sckt;
+ int sckt; //socket
  virtual int write_to_socket(int length) override;
  virtual int read_from_socket(int length) override;
 public:

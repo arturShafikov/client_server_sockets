@@ -12,14 +12,15 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
+//Base class for client
 class Client {
 private:
- const int port;
- const char *address;
+ const int port; //server port
+ const char *address; //server address
 protected:
- struct sockaddr_in addr_server;
- char buffer[1024];
- socklen_t addr_len;
+ struct sockaddr_in addr_server; //full server address
+ char buffer[1024]; //buffer for sending/receiving data
+ socklen_t addr_len; //size of address object
 
  void error(const char *error_msg);
  virtual int write_to_socket(int length) = 0;
